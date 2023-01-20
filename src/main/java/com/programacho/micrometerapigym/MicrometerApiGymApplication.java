@@ -2,12 +2,17 @@ package com.programacho.micrometerapigym;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.MultiGauge;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class MicrometerApiGymApplication {
 
@@ -23,6 +28,9 @@ public class MicrometerApiGymApplication {
 
         // MeterRegistry - TimeGauge
         timeGauge();
+
+        // MeterRegistry - MultiGauge
+        multiGauge();
 
         // Another MeterRegistry in a thread.
         anotherMeterRegistry();
@@ -78,6 +86,31 @@ public class MicrometerApiGymApplication {
 
         System.out.println(registry.find("programacho.time-gauge").timeGauge().value());
         System.out.println(registry.find("programacho.other.time-gauge").timeGauge().value());
+    }
+
+    private static void multiGauge() {
+        System.out.println("MeterRegistry - MultiGauge");
+
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+
+        List<Map<String, Object>> resultSet = List.of(
+                Map.of("user", "foo", "value", 1),
+                Map.of("user", "bar", "value", 2),
+                Map.of("user", "baz", "value", 3)
+        );
+
+        MultiGauge values = MultiGauge.builder("programacho.multi-gauge").register(registry);
+        values.register(resultSet.stream()
+                .map(it -> {
+                    return MultiGauge.Row.of(Tags.of("user", (String) it.get("user")), (Integer) it.get("value"));
+                })
+                .collect(Collectors.toList())
+        );
+
+        System.out.println("Size: " + registry.find("programacho.multi-gauge").gauges().size());
+        System.out.println("foo: " + registry.find("programacho.multi-gauge").tag("user", "foo").gauge().value());
+        System.out.println("bar: " + registry.find("programacho.multi-gauge").tag("user", "bar").gauge().value());
+        System.out.println("baz: " + registry.find("programacho.multi-gauge").tag("user", "baz").gauge().value());
     }
 
     private static void tag() {
