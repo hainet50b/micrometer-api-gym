@@ -2,6 +2,7 @@ package com.programacho.micrometerapigym;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
@@ -20,8 +21,11 @@ public class MicrometerApiGymApplication {
         // MeterRegistry - Gauge
         gauge();
 
-        // Another MeterRegistry
-        anotherRegistry();
+        // MeterRegistry - TimeGauge
+        timeGauge();
+
+        // Another MeterRegistry in a thread.
+        anotherMeterRegistry();
     }
 
     private static void timer() {
@@ -53,7 +57,8 @@ public class MicrometerApiGymApplication {
 
         MeterRegistry registry = new SimpleMeterRegistry();
 
-        AtomicInteger speed = registry.gauge("programacho.gauge", new AtomicInteger(0));
+        AtomicInteger speed = new AtomicInteger(0);
+        registry.gauge("programacho.gauge", speed);
 
         speed.set(40);
         System.out.println(registry.find("programacho.gauge").gauge().value());
@@ -62,12 +67,25 @@ public class MicrometerApiGymApplication {
         System.out.println(registry.find("programacho.gauge").gauge().value());
     }
 
+    private static void timeGauge() {
+        System.out.println("MeterRegistry - TimeGauge");
+
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+
+        AtomicInteger duration = new AtomicInteger(300);
+        TimeGauge.builder("programacho.time-gauge", () -> duration, TimeUnit.SECONDS).register(registry);
+        TimeGauge.builder("programacho.other.time-gauge", () -> duration, TimeUnit.MILLISECONDS).register(registry);
+
+        System.out.println(registry.find("programacho.time-gauge").timeGauge().value());
+        System.out.println(registry.find("programacho.other.time-gauge").timeGauge().value());
+    }
+
     private static void tag() {
         // TODO
     }
 
-    private static void anotherRegistry() {
-        System.out.println("Another MeterRegistry");
+    private static void anotherMeterRegistry() {
+        System.out.println("Another MeterRegistry in a thread.");
 
         MeterRegistry registry = new SimpleMeterRegistry();
 
