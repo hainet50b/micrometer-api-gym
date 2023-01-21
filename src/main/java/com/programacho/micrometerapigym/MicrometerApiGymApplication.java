@@ -1,5 +1,7 @@
 package com.programacho.micrometerapigym;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.MultiGauge;
@@ -8,6 +10,7 @@ import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +25,9 @@ public class MicrometerApiGymApplication {
 
         // MeterRegistry - Counter
         counter();
+
+        // MeterRegistry - FunctionTrackingCounter
+        functionTrackingCounter();
 
         // MeterRegistry - Gauge
         gauge();
@@ -41,9 +47,7 @@ public class MicrometerApiGymApplication {
 
         MeterRegistry registry = new SimpleMeterRegistry();
 
-        registry.timer("programacho.timer").record(() -> {
-            sleep(1);
-        });
+        registry.timer("programacho.timer").record(() -> sleep(1));
 
         System.out.println(registry.find("programacho.timer").timer().totalTime(TimeUnit.SECONDS));
     }
@@ -58,6 +62,26 @@ public class MicrometerApiGymApplication {
         counter.increment(5);
 
         System.out.println(registry.find("programacho.counter").counter().count());
+    }
+
+    private static void functionTrackingCounter() {
+        System.out.println("MeterRegistry - FunctionTrackingCounter");
+
+        MeterRegistry registry = new SimpleMeterRegistry();
+
+        Cache<Object, Object> cache = Caffeine.newBuilder().maximumSize(1).recordStats().build();
+        registry.more().counter(
+                "programacho.function-tracking-counter",
+                Collections.emptyList(),
+                cache,
+                c -> c.stats().requestCount()
+        );
+
+        for (int i = 1; i <= 100; i++) {
+            cache.getIfPresent("key");
+        }
+
+        System.out.println(registry.find("programacho.function-tracking-counter").functionCounter().count());
     }
 
     private static void gauge() {
@@ -101,9 +125,7 @@ public class MicrometerApiGymApplication {
 
         MultiGauge values = MultiGauge.builder("programacho.multi-gauge").register(registry);
         values.register(resultSet.stream()
-                .map(it -> {
-                    return MultiGauge.Row.of(Tags.of("user", (String) it.get("user")), (Integer) it.get("value"));
-                })
+                .map(it -> MultiGauge.Row.of(Tags.of("user", (String) it.get("user")), (Integer) it.get("value")))
                 .collect(Collectors.toList())
         );
 
