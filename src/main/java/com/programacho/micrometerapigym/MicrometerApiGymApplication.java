@@ -13,6 +13,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -25,6 +26,9 @@ public class MicrometerApiGymApplication {
 
         // MeterRegistry - Timer.Sample
         timerSample();
+
+        // MeterRegistry - FunctionTrackingTimer
+        functionTrackingTimer();
 
         // MeterRegistry - Counter
         counter();
@@ -65,6 +69,29 @@ public class MicrometerApiGymApplication {
         sample.stop(registry.timer("programacho.timer"));
 
         System.out.println(registry.find("programacho.timer").timer().totalTime(TimeUnit.SECONDS));
+    }
+
+    private static void functionTrackingTimer() {
+        System.out.println("MeterRegistry - FunctionTrackingTimer");
+
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+
+        Cache<String, Object> cache = Caffeine.newBuilder().recordStats().build();
+        registry.more().timer(
+                "programacho.timer",
+                Collections.emptyList(),
+                cache,
+                c -> c.stats().loadCount(),
+                c -> c.stats().totalLoadTime(),
+                TimeUnit.NANOSECONDS
+        );
+
+        for (int i = 1; i <= 100; i++) {
+            cache.get(UUID.randomUUID().toString(), k -> k);
+        }
+
+        System.out.println(registry.find("programacho.timer").functionTimer().count());
+        System.out.println(registry.find("programacho.timer").functionTimer().totalTime(TimeUnit.SECONDS));
     }
 
     private static void counter() {
