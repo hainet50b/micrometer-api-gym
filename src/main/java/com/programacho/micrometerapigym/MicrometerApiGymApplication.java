@@ -84,7 +84,7 @@ public class MicrometerApiGymApplication {
 
         MeterRegistry registry = new SimpleMeterRegistry();
 
-        Cache<Object, Object> cache = Caffeine.newBuilder().maximumSize(1).recordStats().build();
+        Cache<String, Object> cache = Caffeine.newBuilder().maximumSize(1).recordStats().build();
         registry.more().counter(
                 "programacho.function-tracking-counter",
                 Collections.emptyList(),
