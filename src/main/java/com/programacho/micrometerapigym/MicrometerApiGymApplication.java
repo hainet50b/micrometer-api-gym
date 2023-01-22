@@ -52,6 +52,9 @@ public class MicrometerApiGymApplication {
         // Tag
         tag();
 
+        // Wrap
+        wrap();
+
         // Another MeterRegistry in a thread.
         anotherMeterRegistry();
     }
@@ -227,7 +230,14 @@ public class MicrometerApiGymApplication {
     }
 
     private static void wrap() {
-        // TODO
+        System.out.println("Wrap");
+
+        MeterRegistry registry = new SimpleMeterRegistry();
+
+        Runnable sleep = registry.timer("programacho.timer").wrap(() -> sleep(1_000));
+        sleep.run();
+
+        System.out.println(registry.find("programacho.timer").timer().totalTime(TimeUnit.SECONDS));
     }
 
     private static void anotherMeterRegistry() {
