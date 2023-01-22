@@ -23,6 +23,9 @@ public class MicrometerApiGymApplication {
         // MeterRegistry - Timer
         timer();
 
+        // MeterRegistry - Timer.Sample
+        timerSample();
+
         // MeterRegistry - Counter
         counter();
 
@@ -48,6 +51,18 @@ public class MicrometerApiGymApplication {
         MeterRegistry registry = new SimpleMeterRegistry();
 
         registry.timer("programacho.timer").record(() -> sleep(1));
+
+        System.out.println(registry.find("programacho.timer").timer().totalTime(TimeUnit.SECONDS));
+    }
+
+    private static void timerSample() {
+        System.out.println("MeterRegistry - Timer.Sample");
+
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+
+        Timer.Sample sample = Timer.start(registry);
+        sleep(1);
+        sample.stop(registry.timer("programacho.timer"));
 
         System.out.println(registry.find("programacho.timer").timer().totalTime(TimeUnit.SECONDS));
     }
