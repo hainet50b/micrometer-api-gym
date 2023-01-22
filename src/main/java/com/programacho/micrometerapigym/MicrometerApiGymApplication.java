@@ -22,6 +22,12 @@ import java.util.stream.Collectors;
 public class MicrometerApiGymApplication {
 
     public static void main(String[] args) {
+        // MeterRegistry - Counter
+        counter();
+
+        // MeterRegistry - FunctionTrackingCounter
+        functionTrackingCounter();
+
         // MeterRegistry - Timer
         timer();
 
@@ -30,12 +36,6 @@ public class MicrometerApiGymApplication {
 
         // MeterRegistry - FunctionTrackingTimer
         functionTrackingTimer();
-
-        // MeterRegistry - Counter
-        counter();
-
-        // MeterRegistry - FunctionTrackingCounter
-        functionTrackingCounter();
 
         // MeterRegistry - Gauge
         gauge();
@@ -57,6 +57,38 @@ public class MicrometerApiGymApplication {
 
         // Another MeterRegistry in a thread.
         anotherMeterRegistry();
+    }
+
+    private static void counter() {
+        System.out.println("MeterRegistry - Counter");
+
+        MeterRegistry registry = new SimpleMeterRegistry();
+
+        Counter counter = registry.counter("programacho.counter");
+        counter.increment();
+        counter.increment(5);
+
+        System.out.println(registry.find("programacho.counter").counter().count());
+    }
+
+    private static void functionTrackingCounter() {
+        System.out.println("MeterRegistry - FunctionTrackingCounter");
+
+        MeterRegistry registry = new SimpleMeterRegistry();
+
+        Cache<String, Object> cache = Caffeine.newBuilder().recordStats().build();
+        registry.more().counter(
+                "programacho.counter",
+                Collections.emptyList(),
+                cache,
+                c -> c.stats().requestCount()
+        );
+
+        for (int i = 1; i <= 100; i++) {
+            cache.getIfPresent("key");
+        }
+
+        System.out.println(registry.find("programacho.counter").functionCounter().count());
     }
 
     private static void timer() {
@@ -110,38 +142,6 @@ public class MicrometerApiGymApplication {
         System.out.println(registry.find("programacho.timer").functionTimer().totalTime(TimeUnit.SECONDS));
     }
 
-    private static void counter() {
-        System.out.println("MeterRegistry - Counter");
-
-        MeterRegistry registry = new SimpleMeterRegistry();
-
-        Counter counter = registry.counter("programacho.counter");
-        counter.increment();
-        counter.increment(5);
-
-        System.out.println(registry.find("programacho.counter").counter().count());
-    }
-
-    private static void functionTrackingCounter() {
-        System.out.println("MeterRegistry - FunctionTrackingCounter");
-
-        MeterRegistry registry = new SimpleMeterRegistry();
-
-        Cache<String, Object> cache = Caffeine.newBuilder().maximumSize(1).recordStats().build();
-        registry.more().counter(
-                "programacho.function-tracking-counter",
-                Collections.emptyList(),
-                cache,
-                c -> c.stats().requestCount()
-        );
-
-        for (int i = 1; i <= 100; i++) {
-            cache.getIfPresent("key");
-        }
-
-        System.out.println(registry.find("programacho.function-tracking-counter").functionCounter().count());
-    }
-
     private static void gauge() {
         System.out.println("MeterRegistry - Gauge");
 
@@ -163,11 +163,11 @@ public class MicrometerApiGymApplication {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
 
         AtomicInteger duration = new AtomicInteger(300);
-        TimeGauge.builder("programacho.time-gauge", () -> duration, TimeUnit.SECONDS).register(registry);
-        TimeGauge.builder("programacho.other.time-gauge", () -> duration, TimeUnit.MILLISECONDS).register(registry);
+        TimeGauge.builder("programacho.gauge", () -> duration, TimeUnit.SECONDS).register(registry);
+        TimeGauge.builder("programacho.other.gauge", () -> duration, TimeUnit.MILLISECONDS).register(registry);
 
-        System.out.println(registry.find("programacho.time-gauge").timeGauge().value());
-        System.out.println(registry.find("programacho.other.time-gauge").timeGauge().value());
+        System.out.println(registry.find("programacho.gauge").timeGauge().value());
+        System.out.println(registry.find("programacho.other.gauge").timeGauge().value());
     }
 
     private static void multiGauge() {
@@ -181,16 +181,16 @@ public class MicrometerApiGymApplication {
                 Map.of("user", "baz", "value", 3)
         );
 
-        MultiGauge values = MultiGauge.builder("programacho.multi-gauge").register(registry);
+        MultiGauge values = MultiGauge.builder("programacho.gauge").register(registry);
         values.register(resultSet.stream()
                 .map(it -> MultiGauge.Row.of(Tags.of("user", (String) it.get("user")), (Integer) it.get("value")))
                 .collect(Collectors.toList())
         );
 
-        System.out.println("Size: " + registry.find("programacho.multi-gauge").gauges().size());
-        System.out.println("foo: " + registry.find("programacho.multi-gauge").tag("user", "foo").gauge().value());
-        System.out.println("bar: " + registry.find("programacho.multi-gauge").tag("user", "bar").gauge().value());
-        System.out.println("baz: " + registry.find("programacho.multi-gauge").tag("user", "baz").gauge().value());
+        System.out.println("Size: " + registry.find("programacho.gauge").gauges().size());
+        System.out.println("foo: " + registry.find("programacho.gauge").tag("user", "foo").gauge().value());
+        System.out.println("bar: " + registry.find("programacho.gauge").tag("user", "bar").gauge().value());
+        System.out.println("baz: " + registry.find("programacho.gauge").tag("user", "baz").gauge().value());
     }
 
     private static void distributionSummary() {
