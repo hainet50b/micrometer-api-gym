@@ -62,9 +62,9 @@ public class MicrometerApiGymApplication {
         MeterRegistry registry = new SimpleMeterRegistry();
 
         Timer timer = registry.timer("programacho.timer");
-        timer.record(() -> sleep(1));
-        timer.record(() -> sleep(1));
-        timer.record(() -> sleep(1));
+        timer.record(() -> sleep(100));
+        timer.record(() -> sleep(200));
+        timer.record(() -> sleep(300));
 
         System.out.println("Count: " + registry.find("programacho.timer").timer().count());
         System.out.println("Max: " + registry.find("programacho.timer").timer().max(TimeUnit.SECONDS));
@@ -78,7 +78,7 @@ public class MicrometerApiGymApplication {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
 
         Timer.Sample sample = Timer.start(registry);
-        sleep(1);
+        sleep(1_000);
         sample.stop(registry.timer("programacho.timer"));
 
         System.out.println(registry.find("programacho.timer").timer().totalTime(TimeUnit.SECONDS));
@@ -226,22 +226,25 @@ public class MicrometerApiGymApplication {
         System.out.println("baz: " + registry.find("programacho.counter").tag("user", "baz").counter().count());
     }
 
+    private static void wrap() {
+        // TODO
+    }
+
     private static void anotherMeterRegistry() {
         System.out.println("Another MeterRegistry in a thread.");
 
-        MeterRegistry registry = new SimpleMeterRegistry();
+        MeterRegistry registry1 = new SimpleMeterRegistry();
+        registry1.counter("programacho.counter").increment(10);
+        System.out.println("MeterRegistry1: " + Counter.builder("programacho.counter").register(registry1).count());
 
-        System.out.println(Timer.builder("programacho.timer").register(registry).totalTime(TimeUnit.SECONDS));
-        System.out.println(Counter.builder("programacho.counter").register(registry).count());
-    }
-
-    private static void multiThread() {
-        // TODO
+        MeterRegistry registry2 = new SimpleMeterRegistry();
+        registry2.counter("programacho.counter").increment(20);
+        System.out.println("MeterRegistry2: " + Counter.builder("programacho.counter").register(registry2).count());
     }
 
     private static void sleep(int timeout) {
         try {
-            TimeUnit.SECONDS.sleep(timeout);
+            TimeUnit.MILLISECONDS.sleep(timeout);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
