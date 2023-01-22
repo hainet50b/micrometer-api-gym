@@ -3,6 +3,7 @@ package com.programacho.micrometerapigym;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.MultiGauge;
 import io.micrometer.core.instrument.Tags;
@@ -44,6 +45,9 @@ public class MicrometerApiGymApplication {
 
         // MeterRegistry - MultiGauge
         multiGauge();
+
+        // MeterRegistry - DistributionSummary
+        distributionSummary();
 
         // Another MeterRegistry in a thread.
         anotherMeterRegistry();
@@ -175,6 +179,22 @@ public class MicrometerApiGymApplication {
         System.out.println("foo: " + registry.find("programacho.multi-gauge").tag("user", "foo").gauge().value());
         System.out.println("bar: " + registry.find("programacho.multi-gauge").tag("user", "bar").gauge().value());
         System.out.println("baz: " + registry.find("programacho.multi-gauge").tag("user", "baz").gauge().value());
+    }
+
+    private static void distributionSummary() {
+        System.out.println("MeterRegistry - DistributionSummary");
+
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+
+        DistributionSummary summary = registry.summary("programacho.summary");
+        summary.record(1);
+        summary.record(2);
+        summary.record(3);
+
+        System.out.println("Count: " + registry.find("programacho.summary").summary().count());
+        System.out.println("Max: " + registry.find("programacho.summary").summary().max());
+        System.out.println("Average: " + registry.find("programacho.summary").summary().mean());
+        System.out.println("Sum: " + registry.find("programacho.summary").summary().totalAmount());
     }
 
     private static void tag() {
