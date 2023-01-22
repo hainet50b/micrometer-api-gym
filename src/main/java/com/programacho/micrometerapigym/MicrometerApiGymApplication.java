@@ -49,6 +49,9 @@ public class MicrometerApiGymApplication {
         // MeterRegistry - DistributionSummary
         distributionSummary();
 
+        // Tag
+        tag();
+
         // Another MeterRegistry in a thread.
         anotherMeterRegistry();
     }
@@ -58,9 +61,15 @@ public class MicrometerApiGymApplication {
 
         MeterRegistry registry = new SimpleMeterRegistry();
 
-        registry.timer("programacho.timer").record(() -> sleep(1));
+        final Timer timer = registry.timer("programacho.timer");
+        timer.record(() -> sleep(1));
+        timer.record(() -> sleep(1));
+        timer.record(() -> sleep(1));
 
-        System.out.println(registry.find("programacho.timer").timer().totalTime(TimeUnit.SECONDS));
+        System.out.println("Count: " + registry.find("programacho.timer").timer().count());
+        System.out.println("Max: " + registry.find("programacho.timer").timer().max(TimeUnit.SECONDS));
+        System.out.println("Average: " + registry.find("programacho.timer").timer().mean(TimeUnit.SECONDS));
+        System.out.println("Sum: " + registry.find("programacho.timer").timer().totalTime(TimeUnit.SECONDS));
     }
 
     private static void timerSample() {
