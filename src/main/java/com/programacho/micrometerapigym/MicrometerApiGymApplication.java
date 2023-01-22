@@ -61,7 +61,7 @@ public class MicrometerApiGymApplication {
 
         MeterRegistry registry = new SimpleMeterRegistry();
 
-        final Timer timer = registry.timer("programacho.timer");
+        Timer timer = registry.timer("programacho.timer");
         timer.record(() -> sleep(1));
         timer.record(() -> sleep(1));
         timer.record(() -> sleep(1));
@@ -207,7 +207,23 @@ public class MicrometerApiGymApplication {
     }
 
     private static void tag() {
-        // TODO
+        System.out.println("Tag");
+
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+
+        Counter foo = registry.counter("programacho.counter", "user", "foo");
+        foo.increment(10);
+
+        Counter bar = registry.counter("programacho.counter", "user", "bar");
+        bar.increment(20);
+
+        Counter baz = registry.counter("programacho.counter", "user", "baz");
+        baz.increment(30);
+
+        System.out.println("No tag: " + registry.find("programacho.counter").counter().count());
+        System.out.println("foo: " + registry.find("programacho.counter").tag("user", "foo").counter().count());
+        System.out.println("bar: " + registry.find("programacho.counter").tag("user", "bar").counter().count());
+        System.out.println("baz: " + registry.find("programacho.counter").tag("user", "baz").counter().count());
     }
 
     private static void anotherMeterRegistry() {
